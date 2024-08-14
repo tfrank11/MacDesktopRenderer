@@ -50,7 +50,7 @@ export class DesktopRenderer {
     if (!this.display.length) {
       // initial render`
       this.display = this.getDisplay(grid);
-      this.renderDisplay(this.display);
+      await this.renderDisplay(this.display);
     } else {
       // re-renders
       const ops = this.diff(this.display, grid);

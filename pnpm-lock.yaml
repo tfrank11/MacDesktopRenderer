@@ -7,12 +7,10 @@ specifiers:
   lodash-es: ^4.17.21
   run-applescript: ^7.0.0
   typescript: ^5.5.4
-  uuid: ^10.0.0
 
 dependencies:
   lodash-es: 4.17.21
   run-applescript: 7.0.0
-  uuid: 10.0.0
 
 devDependencies:
   '@types/lodash-es': 4.17.12
@@ -60,8 +58,3 @@ packages:
   /undici-types/6.13.0:
     resolution: {integrity: sha512-xtFJHudx8S2DSoujjMd1WeWvn7KKWFRESZTMeL1RptAYERu29D6jphMjjY+vn96jvN3kVPDNxU/E13VTaXj6jg==}
     dev: true
-
-  /uuid/10.0.0:
-    resolution: {integrity: sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ==}
-    hasBin: true
-    dev: false

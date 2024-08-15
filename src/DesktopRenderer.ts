@@ -1,9 +1,4 @@
-import {
-  deleteFolder,
-  makeFolder,
-  makeFolderAtPos,
-  moveFolder,
-} from "./scriptUtils.js";
+import { deleteFolder, makeFolderAtPos, moveFolder } from "./scriptUtils.js";
 import {
   Cell,
   CellOperation,
@@ -11,7 +6,6 @@ import {
   Display,
   MoveCellOperation,
 } from "./types.js";
-import { v4 as uuid } from "uuid";
 import { flatten, cloneDeep } from "lodash-es";
 
 interface Props {
@@ -19,6 +13,7 @@ interface Props {
   width: number;
   rows: number;
   cols: number;
+  deletedPos: { x: number; y: number };
 }
 
 export class DesktopRenderer {
@@ -26,17 +21,54 @@ export class DesktopRenderer {
   private width: number;
   private rows: number;
   private cols: number;
+  private deletedPos: { x: number; y: number };
 
   private display: Display = [];
+  private deletedIds: string[] = [];
 
-  constructor({ height, width, rows, cols }: Props) {
+  constructor({ height, width, rows, cols, deletedPos }: Props) {
     this.height = height;
     this.width = width;
     this.rows = rows;
     this.cols = cols;
+    this.deletedPos = deletedPos;
+  }
+
+  private async init(rows: number, cols: number) {
+    if (this.display.length) {
+      throw new Error("init called after display exists");
+    }
+    const promises = [];
+    const display = Array.from({ length: rows }).map(() =>
+      Array.from({ length: cols }).fill(null)
+    ) as Display;
+    let i = 0;
+    for (let r = 0; r < display.length; r++) {
+      for (let c = 0; c < display[r].length; c++) {
+        const id = i.toString();
+        i++;
+        this.deletedIds.push(id);
+        display[r][c] = null;
+        promises.push(
+          makeFolderAtPos(id, this.deletedPos.x, this.deletedPos.y)
+        );
+      }
+    }
+    this.display = display;
+    await Promise.allSettled(promises);
+  }
+
+  public async renderGrids(grids: number[][][], interval: number) {
+    for (const grid of grids) {
+      await this.render(grid);
+      await new Promise((res) => setTimeout(res, interval));
+    }
   }
 
   async render(grid: number[][]) {
+    if (!this.display.length) {
+      await this.init(grid.length, grid[0].length);
+    }
     if (grid.length !== this.rows) {
       throw new Error(
         `number of rows in grid (${grid.length}) does not match renderer (${this.rows})`
@@ -47,16 +79,19 @@ export class DesktopRenderer {
         `number of cols in grid (${grid[0].length}) does not match renderer (${this.cols})`
       );
     }
-    if (!this.display.length) {
-      // initial render`
-      this.display = this.getDisplay(grid);
-      await this.renderDisplay(this.display);
-    } else {
-      // re-renders
-      const ops = this.diff(this.display, grid);
-      this.display = this.getDisplayFromOps(ops, this.display);
-      await this.applyOpsToDesktop(ops);
+    if (this.display.length !== this.rows) {
+      throw new Error(
+        `number of rows in display (${this.display.length}) does not match renderer (${this.rows})`
+      );
     }
+    if (this.display[0].length !== this.cols) {
+      throw new Error(
+        `number of cols in display (${this.display[0].length}) does not match renderer (${this.cols})`
+      );
+    }
+    const ops = this.diff(this.display, grid);
+    this.display = this.getDisplayFromOps(ops, this.display);
+    await this.renderOps(ops);
   }
 
   private getDisplayFromOps(ops: CellOperation[], display: Display): Display {
@@ -82,82 +117,33 @@ export class DesktopRenderer {
     return result;
   }
 
-  private applyOpsToDesktop(ops: CellOperation[]) {
+  private renderOps(ops: CellOperation[]) {
     const promises = [];
     for (const op of ops) {
       if (op.type === CellOperationType.MOVE) {
-        const { x, y } = this.getPos(op.r, op.c);
-        promises.push(moveFolder(op.id, x, y));
+        promises.push(this.renderMove(op.id, op.r, op.c));
       } else if (op.type === CellOperationType.ADD) {
-        const { x, y } = this.getPos(op.r, op.c);
-        promises.push(makeFolderAtPos(op.id, x, y));
+        promises.push(this.renderAdd(op.id, op.r, op.c));
       } else if (op.type === CellOperationType.DELETE) {
-        promises.push(deleteFolder(op.id));
+        promises.push(this.renderDelete(op.id));
       }
     }
     return Promise.allSettled(promises);
   }
 
-  private getDisplay(grid: number[][]): Display {
-    const display: Display = [];
-    for (let r = 0; r < grid.length; r++) {
-      const row: (Cell | null)[] = [];
-      for (let c = 0; c < grid[r].length; c++) {
-        const val = grid[r][c];
-        if (![1, 0].includes(val)) {
-          throw new Error("unsupported grid value");
-        }
-        if (val === 0) {
-          row.push(null);
-        } else {
-          const cell: Cell = {
-            id: uuid(),
-            r,
-            c,
-          };
-          row.push(cell);
-        }
-      }
-      display.push(row);
-    }
-    return display;
+  private renderMove(id: string, r: number, c: number) {
+    const { x, y } = this.getPos(r, c);
+    return moveFolder(id, x, y);
   }
 
-  private renderDisplay(display: Display) {
-    const promises = [];
-    for (let r = 0; r < display.length; r++) {
-      for (let c = 0; c < display[0].length; c++) {
-        const cell = display[r][c];
-        if (cell !== null) {
-          promises.push(this.renderCell(cell));
-        }
-      }
-    }
-    return Promise.allSettled(promises);
+  private renderAdd(id: string, r: number, c: number) {
+    const { x, y } = this.getPos(r, c);
+    return moveFolder(id, x, y);
   }
 
-  private async renderCell(cell: Cell) {
-    const { x, y } = this.getPos(cell.r, cell.c);
-    await makeFolder(cell.id);
-    moveFolder(cell.id, x, y);
-  }
-
-  private deleteCell(cell: Cell) {
-    return deleteFolder(cell.id);
-  }
-
-  async cleanup() {
-    const promises = flatten(
-      this.display.map((row) =>
-        row.map((cell) => {
-          if (!cell) {
-            return;
-          }
-          return this.deleteCell(cell);
-        })
-      )
-    );
-    await Promise.allSettled(promises);
+  private renderDelete(id: string) {
+    this.deletedIds.unshift(id);
+    return moveFolder(id, this.deletedPos.x, this.deletedPos.y);
   }
 
   private getPos(r: number, c: number): { x: number; y: number } {
@@ -223,8 +209,12 @@ export class DesktopRenderer {
     // Remaining unmatchedInGrid will be ADD operations
     while (unmatchedInGrid.length) {
       const { r, c } = unmatchedInGrid.pop()!;
+      const id = this.deletedIds.pop();
+      if (!id) {
+        throw new Error("no more cells in deleted stack");
+      }
       operations.push({
-        id: uuid(),
+        id,
         type: CellOperationType.ADD,
         r,
         c,
@@ -232,5 +222,19 @@ export class DesktopRenderer {
     }
 
     return operations;
+  }
+
+  async cleanup() {
+    for (const row of this.display) {
+      for (const cell of row) {
+        if (!cell) {
+          return;
+        }
+        deleteFolder(cell.id);
+      }
+    }
+    for (const id of this.deletedIds) {
+      deleteFolder(id);
+    }
   }
 }

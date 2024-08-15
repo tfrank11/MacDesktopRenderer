@@ -39,6 +39,7 @@ export function makeFolderAtPos(name: string, x: number, y: number) {
 }
 
 export function deleteFolder(name: string) {
+  console.log("delete", name);
   const script = `
     set folderName to "${name}"
     set desktopPath to (path to desktop folder) as text

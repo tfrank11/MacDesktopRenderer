@@ -1,18 +1,10 @@
 import { deleteFolder, makeFolderAtPos, moveFolder } from "./scriptUtils.js";
-import {
-  Cell,
-  CellOperation,
-  CellOperationType,
-  Display,
-  MoveCellOperation,
-} from "./types.js";
-import { flatten, cloneDeep } from "lodash-es";
+import { Cell, CellOperation, CellOperationType, Display } from "./types.js";
+import { cloneDeep } from "lodash-es";
 
 interface Props {
   height: number;
   width: number;
-  rows: number;
-  cols: number;
   deletedPos: { x: number; y: number };
 }
 
@@ -26,15 +18,21 @@ export class DesktopRenderer {
   private display: Display = [];
   private deletedIds: string[] = [];
 
-  constructor({ height, width, rows, cols, deletedPos }: Props) {
+  constructor({ height, width, deletedPos }: Props) {
     this.height = height;
     this.width = width;
-    this.rows = rows;
-    this.cols = cols;
     this.deletedPos = deletedPos;
   }
 
   private async init(rows: number, cols: number) {
+    if (this.rows) {
+      throw new Error("rows should be undefined");
+    }
+    if (this.cols) {
+      throw new Error("cols should be undefined");
+    }
+    this.rows = rows;
+    this.cols = cols;
     if (this.display.length) {
       throw new Error("init called after display exists");
     }

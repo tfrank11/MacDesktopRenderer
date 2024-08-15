@@ -5,8 +5,6 @@ import readline from "readline";
 const renderer = new DesktopRenderer({
   height: SCREEN_HEIGHT,
   width: SCREEN_WIDTH,
-  rows: 10,
-  cols: 9,
   deletedPos: {
     x: 0,
     y: 0,
@@ -136,7 +134,7 @@ renderer.renderGrids(
       [0, 0, 0, 0, 0, 0, 0, 0, 0],
     ],
   ],
-  1000
+  500
 );
 
 readline.emitKeypressEvents(process.stdin);

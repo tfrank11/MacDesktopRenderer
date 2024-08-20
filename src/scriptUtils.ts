@@ -1,4 +1,6 @@
+import { exec } from "child_process";
 import { runAppleScript } from "run-applescript";
+import { ScreenResolution } from "./types";
 
 export function makeFolder(name: string) {
   const script = `
@@ -39,7 +41,6 @@ export function makeFolderAtPos(name: string, x: number, y: number) {
 }
 
 export function deleteFolder(name: string) {
-  console.log("delete", name);
   const script = `
     set folderName to "${name}"
     set desktopPath to (path to desktop folder) as text
@@ -53,4 +54,30 @@ export function deleteFolder(name: string) {
     return
 `;
   return runAppleScript(script);
+}
+
+export async function getScreenDimensions(): Promise<ScreenResolution[]> {
+  return new Promise((resolve, reject) => {
+    exec(
+      "system_profiler SPDisplaysDataType | grep Resolution",
+      (error, stdout, stderr) => {
+        if (error) {
+          reject(error);
+        }
+        if (stderr) {
+          reject(stderr);
+        }
+        const resolutionPattern = /Resolution:\s*(\d+)\s*x\s*(\d+)/g;
+        let match;
+        const resolutions: ScreenResolution[] = [];
+
+        while ((match = resolutionPattern.exec(stdout)) !== null) {
+          const width = parseInt(match[1], 10);
+          const height = parseInt(match[2], 10);
+          resolutions.push({ width, height });
+        }
+        resolve(resolutions);
+      }
+    );
+  });
 }

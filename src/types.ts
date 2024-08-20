@@ -39,3 +39,8 @@ export type Cell = {
 };
 
 export type Display = (Cell | null)[][];
+
+export type ScreenResolution = {
+  width: number;
+  height: number;
+};

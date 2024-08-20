@@ -1,11 +1,16 @@
-import { deleteFolder, makeFolderAtPos, moveFolder } from "./scriptUtils.js";
+import {
+  deleteFolder,
+  getScreenDimensions,
+  makeFolderAtPos,
+  moveFolder,
+} from "./scriptUtils.js";
 import { Cell, CellOperation, CellOperationType, Display } from "./types.js";
 import { cloneDeep } from "lodash-es";
+import readline from "readline";
 
 interface Props {
-  height: number;
-  width: number;
-  deletedPos: { x: number; y: number };
+  deletedPos?: { x: number; y: number };
+  monitorIndex?: number;
 }
 
 export class DesktopRenderer {
@@ -14,17 +19,40 @@ export class DesktopRenderer {
   private rows: number;
   private cols: number;
   private deletedPos: { x: number; y: number };
+  private monitorIndex: number;
 
   private display: Display = [];
   private deletedIds: string[] = [];
 
-  constructor({ height, width, deletedPos }: Props) {
-    this.height = height;
-    this.width = width;
+  constructor({ deletedPos = { x: 0, y: 0 }, monitorIndex = 0 }: Props) {
+    this.monitorIndex = monitorIndex;
     this.deletedPos = deletedPos;
+    this.initKeyboardHandler();
+  }
+
+  private initKeyboardHandler() {
+    readline.emitKeypressEvents(process.stdin);
+    if (process.stdin.isTTY) {
+      process.stdin.setRawMode(true);
+    }
+    process.stdin.on("keypress", async (chunk, key) => {
+      if (key.name === "c") {
+        this.cleanup();
+      }
+      if (key.name === "q") {
+        process.exit();
+      }
+    });
   }
 
   private async init(rows: number, cols: number) {
+    const resolutions = await getScreenDimensions();
+    if (this.monitorIndex > resolutions.length - 1) {
+      throw new Error("invalid monitor index");
+    }
+    this.height = resolutions[this.monitorIndex].height;
+    this.width = resolutions[this.monitorIndex].width;
+
     if (this.rows) {
       throw new Error("rows should be undefined");
     }

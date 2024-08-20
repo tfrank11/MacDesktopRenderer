@@ -23,7 +23,7 @@ const images = [
   // etc.
 ];
 
-renderer.renderGrids(images, 750);
+renderer.renderGrids(images);
 ```
 
 Render one image with `render()`. Note that this is asyncronous, as it waits for the applescript to run. Plz call with await.

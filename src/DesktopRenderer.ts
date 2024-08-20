@@ -24,6 +24,12 @@ export class DesktopRenderer {
   private display: Display = [];
   private deletedIds: string[] = [];
 
+  /**
+   *
+   * @param props
+   * @param props.deledPos Screen coordinates to store unused folders (generally want this to be a corner)
+   * @param props.monitorIndex If you have multiple displays, you may need to play with this to find your primary monitor
+   */
   constructor({ deletedPos = { x: 0, y: 0 }, monitorIndex = 0 }: Props) {
     this.monitorIndex = monitorIndex;
     this.deletedPos = deletedPos;
@@ -84,13 +90,22 @@ export class DesktopRenderer {
     await Promise.allSettled(promises);
   }
 
-  public async renderGrids(grids: number[][][], interval: number) {
+  /**
+   * Renders a series of grids with (default) 500ms in between each render
+   * @param grids A set of grids you want to render
+   * @param interval how long between renders
+   */
+  public async renderGrids(grids: number[][][], interval: number = 500) {
     for (const grid of grids) {
       await this.render(grid);
       await new Promise((res) => setTimeout(res, interval));
     }
   }
 
+  /**
+   * Renders an individual grid
+   * @param grid u can figure it out
+   */
   async render(grid: number[][]) {
     if (!this.display.length) {
       await this.init(grid.length, grid[0].length);

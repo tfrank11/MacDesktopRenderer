@@ -37,3 +37,16 @@ const image = [
 
 await renderer.render(image);
 ```
+
+## Run
+
+```
+pnpm sendit
+```
+
+## TODO
+
+- make `renderer.cleanup()` work
+- figure out this .js file import nonsense
+- make some lit games
+- become more based

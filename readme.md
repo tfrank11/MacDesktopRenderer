@@ -2,7 +2,7 @@
 
 General purpose renderer to display basic images using folders on the Mac desktop.
 
-![](https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExM2ZnZjJlcXhpY3N1NjdrZWNhY3NpbDI4dnJzMTdia3Mza2F0c3Z1YiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/TpN7dxLMpGvS8XZdzh/giphy.gif)
+![](https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExNWplNGVtbXNiOWRiMWljbzBsbDAzYTlkNXBmMHhwa2U5andydDVuMCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/FjX4jaTmdBLZMLAUkc/giphy.gif)
 
 ## Usage
 

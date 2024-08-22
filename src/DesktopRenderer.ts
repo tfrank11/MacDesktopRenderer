@@ -160,7 +160,7 @@ export class DesktopRenderer {
       if (op.type === CellOperationType.MOVE) {
         promises.push(this.renderMove(op.id, op.r, op.c));
       } else if (op.type === CellOperationType.ADD) {
-        promises.push(this.renderAdd(op.id, op.r, op.c));
+        promises.push(this.renderMove(op.id, op.r, op.c));
       } else if (op.type === CellOperationType.DELETE) {
         promises.push(this.renderDelete(op.id));
       }
@@ -169,11 +169,6 @@ export class DesktopRenderer {
   }
 
   private renderMove(id: string, r: number, c: number) {
-    const { x, y } = this.getPos(r, c);
-    return moveFolder(id, x, y);
-  }
-
-  private renderAdd(id: string, r: number, c: number) {
     const { x, y } = this.getPos(r, c);
     return moveFolder(id, x, y);
   }

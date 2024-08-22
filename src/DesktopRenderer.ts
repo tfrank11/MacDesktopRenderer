@@ -1,7 +1,7 @@
 import {
   deleteFolder,
   getScreenDimensions,
-  makeFolderAtPos,
+  makeNumberedFoldersAtPos,
   moveFolder,
 } from "./scriptUtils.js";
 import { Cell, CellOperation, CellOperationType, Display } from "./types.js";
@@ -70,7 +70,6 @@ export class DesktopRenderer {
     if (this.display.length) {
       throw new Error("init called after display exists");
     }
-    const promises = [];
     const display = Array.from({ length: rows }).map(() =>
       Array.from({ length: cols }).fill(null)
     ) as Display;
@@ -81,13 +80,10 @@ export class DesktopRenderer {
         i++;
         this.deletedIds.push(id);
         display[r][c] = null;
-        promises.push(
-          makeFolderAtPos(id, this.deletedPos.x, this.deletedPos.y)
-        );
       }
     }
     this.display = display;
-    await Promise.allSettled(promises);
+    return makeNumberedFoldersAtPos(display.length * display[0].length, 0, 0);
   }
 
   /**

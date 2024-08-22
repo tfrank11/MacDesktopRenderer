@@ -26,17 +26,26 @@ export function moveFolder(name: string, x: number, y: number) {
   return runAppleScript(script);
 }
 
-export function makeFolderAtPos(name: string, x: number, y: number) {
-  const script = `
-    tell application "Finder"
-	    set folderPath to (path to desktop folder as text) & "${name}"
-	    if not (exists folder folderPath) then
-	  	  make new folder at (path to desktop folder) with properties {name:"${name}"}
-	      end if
-	    set desktop position of folder folderPath to {${x}, ${y}}
-    end tell
-    return
-    `;
+export function makeNumberedFoldersAtPos(num: number, x: number, y: number) {
+  let script = `
+  tell application "Finder"
+`;
+
+  for (let i = 0; i < num; i++) {
+    const folderName = i.toString();
+    script += `
+    set folderPath to (path to desktop folder as text) & "${folderName}"
+    if not (exists folder folderPath) then
+      make new folder at (path to desktop folder) with properties {name:"${folderName}"}
+    end if
+    set desktop position of folder folderPath to {${x}, ${y}}
+  `;
+  }
+
+  script += `
+  end tell
+`;
+
   return runAppleScript(script);
 }
 

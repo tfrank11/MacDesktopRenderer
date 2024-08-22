@@ -1,6 +1,6 @@
 import { exec } from "child_process";
 import { runAppleScript } from "run-applescript";
-import { ScreenResolution } from "./types";
+import { DisplayMoveOperation, ScreenResolution } from "./types";
 
 export function makeFolder(name: string) {
   const script = `
@@ -10,17 +10,6 @@ export function makeFolder(name: string) {
 			  make new folder at (path to desktop folder) with properties {name: "${name}"}
 		  end if
 	  end tell
-    return
-    `;
-  return runAppleScript(script);
-}
-
-export function moveFolder(name: string, x: number, y: number) {
-  const script = `
-    tell application "Finder"
-        set folderPath to (path to desktop folder as text) & "${name}"
-        set desktop position of folder folderPath to {${x}, ${y}}
-    end tell
     return
     `;
   return runAppleScript(script);
@@ -45,6 +34,25 @@ export function makeNumberedFoldersAtPos(num: number, x: number, y: number) {
   script += `
   end tell
 `;
+
+  return runAppleScript(script);
+}
+
+export function moveFoldersBulk(ops: DisplayMoveOperation[]) {
+  let script = `
+  tell application "Finder"
+  `;
+
+  for (const { id, x, y } of ops) {
+    script += `
+      set folderPath to (path to desktop folder as text) & "${id}"
+      set desktop position of folder folderPath to {${x}, ${y}}`;
+  }
+
+  script += `
+  end tell
+  return
+  `;
 
   return runAppleScript(script);
 }

@@ -44,3 +44,9 @@ export type ScreenResolution = {
   width: number;
   height: number;
 };
+
+export type DisplayMoveOperation = {
+  id: string;
+  x: number;
+  y: number;
+};

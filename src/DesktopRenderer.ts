@@ -2,9 +2,15 @@ import {
   deleteFolder,
   getScreenDimensions,
   makeNumberedFoldersAtPos,
-  moveFolder,
+  moveFoldersBulk,
 } from "./scriptUtils.js";
-import { Cell, CellOperation, CellOperationType, Display } from "./types.js";
+import {
+  Cell,
+  CellOperation,
+  CellOperationType,
+  Display,
+  DisplayMoveOperation,
+} from "./types.js";
 import { cloneDeep } from "lodash-es";
 import readline from "readline";
 
@@ -155,27 +161,39 @@ export class DesktopRenderer {
   }
 
   private renderOps(ops: CellOperation[]) {
-    const promises = [];
+    const displayOps = [];
     for (const op of ops) {
       if (op.type === CellOperationType.MOVE) {
-        promises.push(this.renderMove(op.id, op.r, op.c));
+        displayOps.push(this.getRenderMove(op.id, op.r, op.c));
       } else if (op.type === CellOperationType.ADD) {
-        promises.push(this.renderMove(op.id, op.r, op.c));
+        displayOps.push(this.getRenderMove(op.id, op.r, op.c));
       } else if (op.type === CellOperationType.DELETE) {
-        promises.push(this.renderDelete(op.id));
+        displayOps.push(this.getRenderDelete(op.id));
       }
     }
-    return Promise.allSettled(promises);
+    return moveFoldersBulk(displayOps);
   }
 
-  private renderMove(id: string, r: number, c: number) {
+  private getRenderMove(
+    id: string,
+    r: number,
+    c: number
+  ): DisplayMoveOperation {
     const { x, y } = this.getPos(r, c);
-    return moveFolder(id, x, y);
+    return {
+      id,
+      x,
+      y,
+    };
   }
 
-  private renderDelete(id: string) {
+  private getRenderDelete(id: string): DisplayMoveOperation {
     this.deletedIds.unshift(id);
-    return moveFolder(id, this.deletedPos.x, this.deletedPos.y);
+    return {
+      id,
+      x: this.deletedPos.x,
+      y: this.deletedPos.y,
+    };
   }
 
   private getPos(r: number, c: number): { x: number; y: number } {

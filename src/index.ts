@@ -5,4 +5,4 @@ const renderer = new DesktopRenderer({
   monitorIndex: 1,
 });
 
-renderer.renderGrids(countdown, 750);
+renderer.renderGrids(countdown, 1000);

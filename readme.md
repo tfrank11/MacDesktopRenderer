@@ -44,6 +44,14 @@ await renderer.render(image);
 pnpm sendit
 ```
 
+## Convert GIFs to arrays to process
+
+This will convert any gif to arrays of 0s and 1s. For the color threshold, you generally want something from 100-200.
+
+```
+pnpm gif-to-arrays <path/to/gif> <width> <height> <color threshold>
+```
+
 ## TODO
 
 - make `renderer.cleanup()` work

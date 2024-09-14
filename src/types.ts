@@ -65,3 +65,10 @@ type IPaddingOptions =
       x?: number;
       y: number;
     };
+
+export type IRenderGridsProps = {
+  grids: number[][][];
+  interval: number;
+  formatting?: IFormatOptions;
+  logging?: boolean;
+};

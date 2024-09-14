@@ -23,7 +23,10 @@ const images = [
   // etc.
 ];
 
-renderer.renderGrids(images);
+await renderer.renderGrids({
+  grids: images,
+  interval: 1000,
+});
 ```
 
 Render one image with `render()`. Note that this is asyncronous, as it waits for the applescript to run. Plz call with await.
@@ -44,7 +47,7 @@ await renderer.render(image);
 pnpm sendit
 ```
 
-## Convert GIFs to grids to process
+## Convert GIFs to grids
 
 This will convert any gif to arrays of 0s and 1s. For the color threshold, you generally want something from 100-200.
 

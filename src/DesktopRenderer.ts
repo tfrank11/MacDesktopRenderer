@@ -5,7 +5,7 @@ import {
   CellOperationType,
   Display,
   DisplayMoveOperation,
-  IFormatOptions,
+  IRenderGridsProps,
   ScreenResolution,
 } from "./types.js";
 import { cloneDeep } from "lodash-es";
@@ -110,32 +110,53 @@ export class DesktopRenderer {
   }
 
   /**
-   * Renders a series of grids with (default) 500ms in between each render
-   * @param grids A set of grids you want to render
-   * @param interval how long between renders
-   * @param options.scale Scale factor to increase the size of the grids
-   * @param options.padding.x Horizontal padding (number of cells)
-   * @param options.padding.y Vertical padding (number of cells)
+   * Renders a series of grids with configurable intervals and options
+   * @param {number[][]} props.grids - Set of grids to render
+   * @param {number} [props.interval=500] - Ms between renders
+   * @param {Object} [props.options] - Formattign options
+   * @param {number} [props.options.scale] - Grid size scaling factor
+   * @param {number} [props.options.padding.x] - Horizontal padding (cells)
+   * @param {number} [props.options.padding.y] - Vertical padding (cells)
+   * @param {boolean} [props.logging] - Enable performance logging
    */
-  public async renderGrids(
-    grids: number[][][],
-    interval: number = 500,
-    options?: IFormatOptions
-  ) {
+  public async renderGrids({
+    grids,
+    interval = 500,
+    formatting,
+    logging,
+  }: IRenderGridsProps) {
     let gridsToUse = grids;
-    if (options?.scale) {
-      gridsToUse = this.scaleGrids(gridsToUse, options.scale);
+    if (formatting?.scale) {
+      gridsToUse = this.scaleGrids(gridsToUse, formatting.scale);
     }
-    if (options?.padding?.x) {
-      gridsToUse = this.addPadding(gridsToUse, options.padding.x, "x");
+    if (formatting?.padding?.x) {
+      gridsToUse = this.addPadding(gridsToUse, formatting.padding.x, "x");
     }
-    if (options?.padding?.y) {
-      gridsToUse = this.addPadding(gridsToUse, options.padding.y, "y");
+    if (formatting?.padding?.y) {
+      gridsToUse = this.addPadding(gridsToUse, formatting.padding.y, "y");
     }
 
+    await this.init(gridsToUse[0].length, gridsToUse[0][0].length);
+
+    const renderMs: number[] = [];
+
     for (const grid of gridsToUse) {
+      const start = Date.now();
       await this.render(grid);
+      if (logging) {
+        const ms = Date.now() - start;
+        renderMs.push(ms);
+        console.log("Frame render ms:", ms);
+        renderMs.push(ms);
+      }
+
       await new Promise((res) => setTimeout(res, interval));
+    }
+    if (logging) {
+      console.log(
+        "Average ms:",
+        renderMs.reduce((p, c) => p + c, 0) / renderMs.length
+      );
     }
   }
 
@@ -206,16 +227,16 @@ export class DesktopRenderer {
         displayOps.push(this.getRenderDelete(op.id));
       }
     }
-    const start = Date.now();
-    const i1 = Math.floor(displayOps.length / 4);
-    const i2 = i1 * 2;
-    const res = await Promise.all([
-      this.bulkMoveFolders(displayOps.slice(0, i1)),
-      this.bulkMoveFolders(displayOps.slice(i1, i2)),
-      this.bulkMoveFolders(displayOps.slice(i2, displayOps.length)),
-    ]);
-    console.log("Frame render time:", Date.now() - start);
-    return res;
+    await this.renderMulti(displayOps, 3);
+  }
+
+  private async renderMulti(displayOps: DisplayMoveOperation[], num: number) {
+    const chunkSize = Math.ceil(displayOps.length / num);
+    const chunks = Array.from({ length: num }, (_, i) =>
+      displayOps.slice(i * chunkSize, (i + 1) * chunkSize)
+    );
+
+    return Promise.all(chunks.map((chunk) => this.bulkMoveFolders(chunk)));
   }
 
   private getRenderMove(

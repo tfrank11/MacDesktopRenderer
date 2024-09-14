@@ -9,10 +9,14 @@ const renderer = new DesktopRenderer({
   },
 });
 
-renderer.renderGrids(countdown, 1000, {
-  scale: 2,
-  padding: {
-    y: 2,
-    x: 2,
+renderer.renderGrids({
+  grids: countdown,
+  interval: 1000,
+  formatting: {
+    scale: 2,
+    padding: {
+      y: 2,
+      x: 2,
+    },
   },
 });

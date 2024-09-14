@@ -1,3 +1,5 @@
+export const debuggingGrid = [[[1]], [[0]], [[1]], [[0]], [[1]], [[0]]];
+
 const countdown = [
   [
     [0, 0, 0, 0, 0, 0, 0, 0, 0],

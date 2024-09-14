@@ -5,21 +5,13 @@ import {
   CellOperationType,
   Display,
   DisplayMoveOperation,
+  IDesktopRendererProps,
   IRenderGridsProps,
   ScreenResolution,
 } from "./types.js";
 import { cloneDeep } from "lodash-es";
 import readline from "readline";
 import { exec } from "child_process";
-
-interface Props {
-  deletedPos?: { x: number; y: number };
-  monitorIndex?: number;
-  screenDimensions?: {
-    width: number;
-    height: number;
-  };
-}
 
 export class DesktopRenderer {
   private height: number;
@@ -28,6 +20,7 @@ export class DesktopRenderer {
   private cols: number;
   private deletedPos: { x: number; y: number };
   private monitorIndex: number;
+  private multiScriptNum = 3;
 
   private display: Display = [];
   private deletedIds: string[] = [];
@@ -38,18 +31,23 @@ export class DesktopRenderer {
    * @param props.deledPos Screen coordinates to store unused folders (generally want this to be a corner)
    * @param [props.monitorIndex] If you have multiple displays, you may need to play with this to find your primary monitor
    * @param [props.screenDimensions] you can specify the dimensions of your screen for better results
+   * @param [props.multiScriptNum] number of simultaneous AppleScript calls to make to render a frame
    */
   constructor({
     deletedPos = { x: 0, y: 0 },
     monitorIndex = 0,
     screenDimensions,
-  }: Props) {
+    multiScriptNum,
+  }: IDesktopRendererProps) {
     this.monitorIndex = monitorIndex;
     this.deletedPos = deletedPos;
     this.initKeyboardHandler();
     if (screenDimensions) {
       this.width = screenDimensions.width;
       this.height = screenDimensions.height;
+    }
+    if (multiScriptNum) {
+      this.multiScriptNum = multiScriptNum;
     }
   }
 
@@ -227,7 +225,7 @@ export class DesktopRenderer {
         displayOps.push(this.getRenderDelete(op.id));
       }
     }
-    await this.renderMulti(displayOps, 3);
+    return this.renderMulti(displayOps, this.multiScriptNum);
   }
 
   private async renderMulti(displayOps: DisplayMoveOperation[], num: number) {
@@ -428,11 +426,12 @@ export class DesktopRenderer {
   private bulkMoveFolders(ops: DisplayMoveOperation[]) {
     let script = `
     tell application "Finder"
+    set desktopPath to path to desktop folder as text
     `;
 
     for (const { id, x, y } of ops) {
       script += `
-        set folderPath to (path to desktop folder as text) & "${id}"
+        set folderPath to desktopPath & "${id}"
         set desktop position of folder folderPath to {${x}, ${y}}`;
     }
 

@@ -72,3 +72,13 @@ export type IRenderGridsProps = {
   formatting?: IFormatOptions;
   logging?: boolean;
 };
+
+export type IDesktopRendererProps = {
+  deletedPos?: { x: number; y: number };
+  monitorIndex?: number;
+  screenDimensions?: {
+    width: number;
+    height: number;
+  };
+  multiScriptNum?: number;
+};

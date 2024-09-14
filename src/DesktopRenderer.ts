@@ -160,7 +160,7 @@ export class DesktopRenderer {
     return result;
   }
 
-  private renderOps(ops: CellOperation[]) {
+  private async renderOps(ops: CellOperation[]) {
     const displayOps = [];
     for (const op of ops) {
       if (op.type === CellOperationType.MOVE) {
@@ -171,7 +171,16 @@ export class DesktopRenderer {
         displayOps.push(this.getRenderDelete(op.id));
       }
     }
-    return moveFoldersBulk(displayOps);
+    const start = Date.now();
+    const i1 = Math.floor(displayOps.length / 4);
+    const i2 = i1 * 2;
+    const res = await Promise.all([
+      moveFoldersBulk(displayOps.slice(0, i1)),
+      moveFoldersBulk(displayOps.slice(i1, i2)),
+      moveFoldersBulk(displayOps.slice(i2, displayOps.length)),
+    ]);
+    console.log("move folder", Date.now() - start);
+    return res;
   }
 
   private getRenderMove(

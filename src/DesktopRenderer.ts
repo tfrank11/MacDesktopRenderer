@@ -1,9 +1,4 @@
-import {
-  deleteFolder,
-  getScreenDimensions,
-  makeNumberedFoldersAtPos,
-  moveFoldersBulk,
-} from "./scriptUtils.js";
+import { runAppleScript } from "run-applescript";
 import {
   Cell,
   CellOperation,
@@ -11,9 +6,11 @@ import {
   Display,
   DisplayMoveOperation,
   IFormatOptions,
+  ScreenResolution,
 } from "./types.js";
 import { cloneDeep } from "lodash-es";
 import readline from "readline";
+import { exec } from "child_process";
 
 interface Props {
   deletedPos?: { x: number; y: number };
@@ -73,7 +70,7 @@ export class DesktopRenderer {
 
   private async init(rows: number, cols: number) {
     if (!this.height || !this.width) {
-      const resolutions = await getScreenDimensions();
+      const resolutions = await this.getScreenDimensions();
       if (this.monitorIndex > resolutions.length - 1) {
         throw new Error("invalid monitor index");
       }
@@ -105,7 +102,11 @@ export class DesktopRenderer {
       }
     }
     this.display = display;
-    return makeNumberedFoldersAtPos(display.length * display[0].length, 0, 0);
+    return this.makeNumberedFoldersAtPos(
+      display.length * display[0].length,
+      0,
+      0
+    );
   }
 
   /**
@@ -209,9 +210,9 @@ export class DesktopRenderer {
     const i1 = Math.floor(displayOps.length / 4);
     const i2 = i1 * 2;
     const res = await Promise.all([
-      moveFoldersBulk(displayOps.slice(0, i1)),
-      moveFoldersBulk(displayOps.slice(i1, i2)),
-      moveFoldersBulk(displayOps.slice(i2, displayOps.length)),
+      this.bulkMoveFolders(displayOps.slice(0, i1)),
+      this.bulkMoveFolders(displayOps.slice(i1, i2)),
+      this.bulkMoveFolders(displayOps.slice(i2, displayOps.length)),
     ]);
     console.log("Frame render time:", Date.now() - start);
     return res;
@@ -372,11 +373,95 @@ export class DesktopRenderer {
         if (!cell) {
           return;
         }
-        deleteFolder(cell.id);
+        this.deleteFolder(cell.id);
       }
     }
     for (const id of this.deletedIds) {
-      deleteFolder(id);
+      this.deleteFolder(id);
     }
+  }
+
+  private makeNumberedFoldersAtPos(num: number, x: number, y: number) {
+    let script = `
+    tell application "Finder"
+  `;
+
+    for (let i = 0; i < num; i++) {
+      const folderName = i.toString();
+      script += `
+      set folderPath to (path to desktop folder as text) & "${folderName}"
+      if not (exists folder folderPath) then
+        make new folder at (path to desktop folder) with properties {name:"${folderName}"}
+      end if
+      set desktop position of folder folderPath to {${x}, ${y}}
+    `;
+    }
+
+    script += `
+    end tell
+  `;
+
+    return runAppleScript(script);
+  }
+
+  private bulkMoveFolders(ops: DisplayMoveOperation[]) {
+    let script = `
+    tell application "Finder"
+    `;
+
+    for (const { id, x, y } of ops) {
+      script += `
+        set folderPath to (path to desktop folder as text) & "${id}"
+        set desktop position of folder folderPath to {${x}, ${y}}`;
+    }
+
+    script += `
+    end tell
+    return
+    `;
+
+    return runAppleScript(script);
+  }
+
+  private deleteFolder(name: string) {
+    const script = `
+      set folderName to "${name}"
+      set desktopPath to (path to desktop folder) as text
+      set targetFolder to desktopPath & folderName
+  
+      tell application "Finder"
+        if exists folder targetFolder then
+          delete folder targetFolder
+        end if
+      end tell
+      return
+  `;
+    return runAppleScript(script);
+  }
+
+  private async getScreenDimensions(): Promise<ScreenResolution[]> {
+    return new Promise((resolve, reject) => {
+      exec(
+        "system_profiler SPDisplaysDataType | grep Resolution",
+        (error, stdout, stderr) => {
+          if (error) {
+            reject(error);
+          }
+          if (stderr) {
+            reject(stderr);
+          }
+          const resolutionPattern = /Resolution:\s*(\d+)\s*x\s*(\d+)/g;
+          let match;
+          const resolutions: ScreenResolution[] = [];
+
+          while ((match = resolutionPattern.exec(stdout)) !== null) {
+            const width = parseInt(match[1], 10);
+            const height = parseInt(match[2], 10);
+            resolutions.push({ width, height });
+          }
+          resolve(resolutions);
+        }
+      );
+    });
   }
 }

@@ -2,19 +2,37 @@ import fs from "fs/promises";
 import Jimp from "jimp";
 import { parseGIF, decompressFrames } from "gifuct-js";
 
-type IGifToArrayProps = {
+type IGifToGridOptions = {
   gifPath: string;
   width: number;
   height: number;
   threshold: number;
 };
 
-export async function gifToArrays({
+/**
+ * Converts a GIF file to an array of binary frames.
+ *
+ * @param {Object} options - The options for processing the GIF.
+ * @param {string} options.gifPath - The file path of the GIF to process.
+ * @param {number} options.width - The maximum width of the output frames.
+ * @param {number} options.height - The maximum height of the output frames.
+ * @param {number} options.threshold - The intensity threshold for converting pixels to 0/1
+ * @returns {Promise<number[][][]>} A promise that resolves to a 3D array representing binary frames.
+ *
+ * @example
+ * const frames = await gifToArrays({
+ *   gifPath: './path/to/gif.gif',
+ *   width: 100,
+ *   height: 100,
+ *   threshold: 128
+ * });
+ */
+export async function gifToGrid({
   gifPath,
   width,
   height,
   threshold,
-}: IGifToArrayProps): Promise<number[][][]> {
+}: IGifToGridOptions): Promise<number[][][]> {
   const gifBuffer = await fs.readFile(gifPath);
   const gif = parseGIF(gifBuffer);
   const frames = decompressFrames(gif, true);

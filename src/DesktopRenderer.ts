@@ -10,6 +10,7 @@ import {
   CellOperationType,
   Display,
   DisplayMoveOperation,
+  IFormatOptions,
 } from "./types.js";
 import { cloneDeep } from "lodash-es";
 import readline from "readline";
@@ -17,6 +18,10 @@ import readline from "readline";
 interface Props {
   deletedPos?: { x: number; y: number };
   monitorIndex?: number;
+  screenDimensions?: {
+    width: number;
+    height: number;
+  };
 }
 
 export class DesktopRenderer {
@@ -34,12 +39,21 @@ export class DesktopRenderer {
    *
    * @param props
    * @param props.deledPos Screen coordinates to store unused folders (generally want this to be a corner)
-   * @param props.monitorIndex If you have multiple displays, you may need to play with this to find your primary monitor
+   * @param [props.monitorIndex] If you have multiple displays, you may need to play with this to find your primary monitor
+   * @param [props.screenDimensions] you can specify the dimensions of your screen for better results
    */
-  constructor({ deletedPos = { x: 0, y: 0 }, monitorIndex = 0 }: Props) {
+  constructor({
+    deletedPos = { x: 0, y: 0 },
+    monitorIndex = 0,
+    screenDimensions,
+  }: Props) {
     this.monitorIndex = monitorIndex;
     this.deletedPos = deletedPos;
     this.initKeyboardHandler();
+    if (screenDimensions) {
+      this.width = screenDimensions.width;
+      this.height = screenDimensions.height;
+    }
   }
 
   private initKeyboardHandler() {
@@ -58,12 +72,14 @@ export class DesktopRenderer {
   }
 
   private async init(rows: number, cols: number) {
-    const resolutions = await getScreenDimensions();
-    if (this.monitorIndex > resolutions.length - 1) {
-      throw new Error("invalid monitor index");
+    if (!this.height || !this.width) {
+      const resolutions = await getScreenDimensions();
+      if (this.monitorIndex > resolutions.length - 1) {
+        throw new Error("invalid monitor index");
+      }
+      this.height = resolutions[this.monitorIndex].height;
+      this.width = resolutions[this.monitorIndex].width;
     }
-    this.height = resolutions[this.monitorIndex].height;
-    this.width = resolutions[this.monitorIndex].width;
 
     if (this.rows) {
       throw new Error("rows should be undefined");
@@ -96,9 +112,27 @@ export class DesktopRenderer {
    * Renders a series of grids with (default) 500ms in between each render
    * @param grids A set of grids you want to render
    * @param interval how long between renders
+   * @param options.scale Scale factor to increase the size of the grids
+   * @param options.padding.x Horizontal padding (number of cells)
+   * @param options.padding.y Vertical padding (number of cells)
    */
-  public async renderGrids(grids: number[][][], interval: number = 500) {
-    for (const grid of grids) {
+  public async renderGrids(
+    grids: number[][][],
+    interval: number = 500,
+    options?: IFormatOptions
+  ) {
+    let gridsToUse = grids;
+    if (options?.scale) {
+      gridsToUse = this.scaleGrids(gridsToUse, options.scale);
+    }
+    if (options?.padding?.x) {
+      gridsToUse = this.addPadding(gridsToUse, options.padding.x, "x");
+    }
+    if (options?.padding?.y) {
+      gridsToUse = this.addPadding(gridsToUse, options.padding.y, "y");
+    }
+
+    for (const grid of gridsToUse) {
       await this.render(grid);
       await new Promise((res) => setTimeout(res, interval));
     }
@@ -179,7 +213,7 @@ export class DesktopRenderer {
       moveFoldersBulk(displayOps.slice(i1, i2)),
       moveFoldersBulk(displayOps.slice(i2, displayOps.length)),
     ]);
-    console.log("move folder", Date.now() - start);
+    console.log("Frame render time:", Date.now() - start);
     return res;
   }
 
@@ -281,6 +315,55 @@ export class DesktopRenderer {
     }
 
     return operations;
+  }
+
+  private addPadding(
+    grids: number[][][],
+    padding: number,
+    type: "x" | "y"
+  ): number[][][] {
+    return grids.map((grid) => {
+      const cols = grid[0].length;
+
+      if (type === "y") {
+        const paddingRow = new Array(cols).fill(0);
+        return [
+          ...Array(padding).fill(paddingRow),
+          ...grid,
+          ...Array(padding).fill(paddingRow),
+        ];
+      } else {
+        return grid.map((row) => [
+          ...Array(padding).fill(0),
+          ...row,
+          ...Array(padding).fill(0),
+        ]);
+      }
+    });
+  }
+
+  private scaleGrids(grids: number[][][], scale: number): number[][][] {
+    const result: number[][][] = [];
+    if (scale <= 0) {
+      throw new Error("invalid scale factor");
+    }
+    for (const grid of grids) {
+      const scaledGrid: number[][] = [];
+
+      for (let y = 0; y < grid.length; y++) {
+        for (let scaleY = 0; scaleY < scale; scaleY++) {
+          const scaledRow: number[] = [];
+          for (let x = 0; x < grid[y].length; x++) {
+            for (let scaleX = 0; scaleX < scale; scaleX++) {
+              scaledRow.push(grid[y][x]);
+            }
+          }
+          scaledGrid.push(scaledRow);
+        }
+      }
+      result.push(scaledGrid);
+    }
+    return result;
   }
 
   async cleanup() {

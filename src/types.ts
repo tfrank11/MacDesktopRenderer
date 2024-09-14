@@ -50,3 +50,18 @@ export type DisplayMoveOperation = {
   x: number;
   y: number;
 };
+
+export type IFormatOptions = {
+  scale: number;
+  padding?: IPaddingOptions;
+};
+
+type IPaddingOptions =
+  | {
+      x: number;
+      y?: number;
+    }
+  | {
+      x?: number;
+      y: number;
+    };

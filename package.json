@@ -7,7 +7,7 @@
     "build": "tsc",
     "start": "node dist/src/index.js",
     "sendit": "pnpm build && pnpm start",
-    "gif-to-arrays": "pnpm build && node dist/src/gifToArrays.js"
+    "gif-to-grid": "pnpm build && node dist/src/gifToGrid.js"
   },
   "author": "",
   "license": "ISC",

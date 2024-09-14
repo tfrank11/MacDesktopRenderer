@@ -1,4 +1,4 @@
-import { gifToArrays, writeFramesToTSFile } from "./gifUtils.js";
+import { gifToGrid, writeFramesToTSFile } from "./gridUtils.js";
 
 (async () => {
   const [, , gifPath, width, height, threshold] = process.argv;
@@ -11,7 +11,7 @@ import { gifToArrays, writeFramesToTSFile } from "./gifUtils.js";
   }
 
   try {
-    const frames = await gifToArrays({
+    const frames = await gifToGrid({
       gifPath,
       width: parseInt(width),
       height: parseInt(height),

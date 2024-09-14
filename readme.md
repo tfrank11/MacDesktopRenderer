@@ -48,6 +48,8 @@ pnpm sendit
 
 This will convert any gif to arrays of 0s and 1s. For the color threshold, you generally want something from 100-200.
 
+Disclaimer: this part was made entirely with chatGPT
+
 ```
 pnpm gif-to-arrays <path/to/gif> <width> <height> <color threshold>
 ```

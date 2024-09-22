@@ -49,7 +49,7 @@ export async function gifToGrid({
   const framesBinaryArray: number[][][] = [];
 
   for (const frame of frames) {
-    let jimpImage = new Jimp({
+    const jimpImage = new Jimp({
       data: Buffer.from(frame.patch),
       width: frame.dims.width,
       height: frame.dims.height,
@@ -99,7 +99,7 @@ export async function writeFramesToTSFile(
   outputPath: string
 ) {
   let fileContent = `export const frames = [\n`;
-  framesBinaryArray.forEach((frame, index) => {
+  framesBinaryArray.forEach((frame) => {
     fileContent += `  [\n`;
     frame.forEach((row) => {
       fileContent += `    [${row.join(", ")}],\n`;

@@ -1,5 +1,5 @@
 import { DesktopRenderer } from "./DesktopRenderer.js";
-import { countdown, debuggingGrid, partyParrot } from "./examples.js";
+import { countdown } from "./examples.js";
 
 const renderer = new DesktopRenderer({
   monitorIndex: 1,

@@ -5,9 +5,9 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/src/index.js",
+    "start": "node dist/index.js",
     "sendit": "pnpm build && pnpm start",
-    "gif-to-grid": "pnpm build && node dist/src/gifToGrid.js"
+    "gif-to-grid": "pnpm build && node dist/gifToGrid.js"
   },
   "author": "",
   "license": "ISC",

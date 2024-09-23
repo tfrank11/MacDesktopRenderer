@@ -25,6 +25,11 @@ export class DesktopRenderer {
   private display: Display = [];
   private deletedIds: string[] = [];
 
+  private didCleanup = false;
+  private isRendering = false;
+  private isRenderingGrids = false;
+  private isInited = false;
+
   /**
    *
    * @param props
@@ -100,11 +105,12 @@ export class DesktopRenderer {
       }
     }
     this.display = display;
-    return this.makeNumberedFoldersAtPos(
+    await this.makeNumberedFoldersAtPos(
       display.length * display[0].length,
       0,
       0
     );
+    this.isInited = true;
   }
 
   /**
@@ -123,6 +129,7 @@ export class DesktopRenderer {
     formatting,
     logging,
   }: IRenderGridsProps) {
+    this.isRenderingGrids = true;
     let gridsToUse = grids;
     if (formatting?.scale) {
       gridsToUse = this.scaleGrids(gridsToUse, formatting.scale);
@@ -156,6 +163,7 @@ export class DesktopRenderer {
         renderMs.reduce((p, c) => p + c, 0) / renderMs.length
       );
     }
+    this.isRenderingGrids = false;
   }
 
   /**
@@ -186,9 +194,11 @@ export class DesktopRenderer {
         `number of cols in display (${this.display[0].length}) does not match renderer (${this.cols})`
       );
     }
+    this.isRendering = true;
     const ops = this.diff(this.display, grid);
     this.display = this.getDisplayFromOps(ops, this.display);
     await this.renderOps(ops);
+    this.isRendering = false;
   }
 
   private getDisplayFromOps(ops: CellOperation[], display: Display): Display {
@@ -387,17 +397,39 @@ export class DesktopRenderer {
   }
 
   async cleanup() {
+    if (!this.isInited) {
+      console.warn("havent even inited yet lol");
+      return;
+    }
+    if (this.isRendering) {
+      console.warn("Cannot call cleanup() while rendering");
+      return;
+    }
+    if (this.isRenderingGrids) {
+      console.warn("Cannot call cleanup() while rendering grids");
+      return;
+    }
+    if (this.didCleanup) {
+      console.warn("cleanup() was already called");
+      return;
+    }
+    this.didCleanup = true;
+    const names = [];
     for (const row of this.display) {
       for (const cell of row) {
         if (!cell) {
-          return;
+          continue;
         }
-        this.deleteFolder(cell.id);
+        names.push(cell.id);
       }
     }
     for (const id of this.deletedIds) {
-      this.deleteFolder(id);
+      names.push(id);
     }
+    await this.muteVolume();
+    await this.deleteFolders(names);
+    await this.unmuteVolume();
+    process.exit();
   }
 
   private makeNumberedFoldersAtPos(num: number, x: number, y: number) {
@@ -443,19 +475,39 @@ export class DesktopRenderer {
     return runAppleScript(script);
   }
 
-  private deleteFolder(name: string) {
-    const script = `
-      set folderName to "${name}"
-      set desktopPath to (path to desktop folder) as text
-      set targetFolder to desktopPath & folderName
-  
-      tell application "Finder"
+  private deleteFolders(names: string[]) {
+    let script = `
+    tell application "Finder"
+    `;
+    for (const name of names) {
+      script += `
+        set folderName to "${name}"
+        set desktopPath to (path to desktop folder) as text
+        set targetFolder to desktopPath & folderName
+
         if exists folder targetFolder then
           delete folder targetFolder
         end if
+    `;
+    }
+
+    script += `
       end tell
-      return
-  `;
+      return`;
+    return runAppleScript(script);
+  }
+
+  private muteVolume() {
+    const script = `
+    set curVolume to get volume settings
+    set volume with output muted`;
+    return runAppleScript(script);
+  }
+
+  private unmuteVolume() {
+    const script = `
+    set curVolume to get volume settings
+    set volume without output muted`;
     return runAppleScript(script);
   }
 

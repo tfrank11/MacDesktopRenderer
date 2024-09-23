@@ -4,6 +4,11 @@ General purpose renderer to display basic images using folders on the Mac deskto
 
 ![](https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExNWplNGVtbXNiOWRiMWljbzBsbDAzYTlkNXBmMHhwa2U5andydDVuMCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/FjX4jaTmdBLZMLAUkc/giphy.gif)
 
+## Helpful:
+
+- quit by typing `q` into the terminal running your node process
+- delete all folders AND quit with `c`
+
 ## Usage
 
 Render a series of images using `renderGrids()`.

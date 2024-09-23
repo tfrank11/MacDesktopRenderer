@@ -11,7 +11,7 @@ const renderer = new DesktopRenderer({
 });
 
 renderer.renderGrids({
-  grids: countdown,
+  grids: countdown.slice(0, 3),
   interval: 1000,
   formatting: {
     scale: 2,
